@@ -13,15 +13,13 @@ const ICONS = {
   shopping:  `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`,
 };
 
-/* ─── Shared age-gate script (injected into both page types) ─────────────── */
+/* ─── Shared age-gate script ─────────────────────────────────────────────── */
 const AGE_GATE_SCRIPT = `
-  /* Age gate — hold-only: tap always blocked, only long-press "Open Link" works */
   var _pendingUrl = null;
   var _pendingId  = null;
 
   function openAgeGate(url, id) {
-    _pendingUrl = url;
-    _pendingId  = id;
+    _pendingUrl = url; _pendingId = id;
     var btn = document.getElementById('confirmBtn');
     if (btn) btn.href = url;
     var gate = document.getElementById('ageGate');
@@ -45,10 +43,9 @@ const AGE_GATE_SCRIPT = `
     var gate  = document.getElementById('ageGate');
 
     if (btn) {
-      /* ALWAYS block tap/click — user must use native long-press "Open Link" */
+      /* ALWAYS block tap/click — must long-press for iOS "Open Link" */
       btn.addEventListener('click', function(e) {
         e.preventDefault();
-        /* Pulse the instruction so user knows what to do */
         if (instr) {
           instr.classList.remove('pulse');
           void instr.offsetWidth;
@@ -62,87 +59,43 @@ const AGE_GATE_SCRIPT = `
       document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeAgeGate(); });
     }
 
-    /* Auto-open if ?go param present (direct link mode — age gate already fullscreen) */
     __AUTO_OPEN__
   });
 `;
 
-/* ─── Shared age-gate CSS ────────────────────────────────────────────────── */
+/* ─── Age gate CSS used on the PROFILE page (overlay, uses creator accent) ── */
 function ageGateCss(accent) {
   return `
-    .age-gate {
-      display: none; position: fixed; inset: 0; z-index: 100;
-      background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      align-items: center; justify-content: center; padding: 24px;
-    }
-    .age-gate.visible { display: flex; }
-    .age-gate-card {
-      background: #1e1e1e; border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 24px; padding: 40px 28px; max-width: 360px; width: 100%;
-      text-align: center; display: flex; flex-direction: column; align-items: center;
-      gap: 14px; animation: fadeUp 0.25s ease;
-    }
-    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-    .age-icon {
-      width: 64px; height: 64px; border-radius: 50%;
-      background: ${accent}18; border: 2px solid ${accent}66;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .age-icon svg { color: ${accent}; }
-    .age-gate-title { font-size: 1.25rem; font-weight: 700; color: #fff; }
-    .age-gate-text { font-size: 0.86rem; color: rgba(255,255,255,0.5); line-height: 1.65; }
-    .age-gate-actions { display: flex; flex-direction: column; gap: 12px; width: 100%; margin-top: 4px; }
-
-    /* ANCHOR tag — critical so iOS long-press shows native "Open Link" */
-    .btn-confirm {
-      display: flex; align-items: center; justify-content: center;
-      padding: 16px 24px; border-radius: 50px; border: none;
-      background: ${accent}; color: #1a1a1a;
-      font-size: 1rem; font-weight: 700; text-decoration: none;
-      cursor: pointer; letter-spacing: 0.02em;
-      transition: filter 0.15s;
-      /* MUST allow iOS native long-press context menu */
-      -webkit-touch-callout: default;
-    }
-    .btn-confirm:active { filter: brightness(0.88); }
-
-    /* Instruction — always visible */
-    .hold-instruction {
-      font-size: 0.82rem; color: rgba(255,255,255,0.55);
-      line-height: 1.55; text-align: center;
-    }
-    @keyframes holdPulse {
-      0%   { transform: scale(1);    color: rgba(255,255,255,0.55); }
-      45%  { transform: scale(1.04); color: ${accent}; }
-      100% { transform: scale(1);    color: rgba(255,255,255,0.55); }
-    }
-    .hold-instruction.pulse { animation: holdPulse 0.6s ease; }
-
-    .btn-decline {
-      padding: 13px 24px; border-radius: 50px;
-      border: 1.5px solid rgba(255,255,255,0.12);
-      background: transparent; color: rgba(255,255,255,0.4);
-      font-size: 0.88rem; font-weight: 500; cursor: pointer;
-      transition: border-color 0.2s, color 0.2s; font-family: inherit;
-    }
-    .btn-decline:hover { border-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.75); }
+    .age-gate { display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.88); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:24px; }
+    .age-gate.visible { display:flex; }
+    .age-gate-card { background:#1e1e1e; border:1px solid rgba(255,255,255,0.1); border-radius:22px; padding:40px 28px; max-width:360px; width:100%; text-align:center; display:flex; flex-direction:column; align-items:center; gap:14px; animation:fadeUp 0.25s ease; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)} }
+    .age-icon { width:60px; height:60px; border-radius:50%; background:${accent}18; border:2px solid ${accent}55; display:flex; align-items:center; justify-content:center; }
+    .age-icon svg { color:${accent}; }
+    .age-gate-title { font-size:1.2rem; font-weight:700; color:#fff; }
+    .age-gate-text { font-size:0.86rem; color:rgba(255,255,255,0.5); line-height:1.65; }
+    .age-gate-actions { display:flex; flex-direction:column; gap:12px; width:100%; margin-top:4px; }
+    .btn-confirm { display:flex; align-items:center; justify-content:center; padding:16px 24px; border-radius:50px; border:none; background:${accent}; color:#1a1a1a; font-size:1rem; font-weight:700; text-decoration:none; cursor:pointer; letter-spacing:0.02em; transition:filter 0.15s; -webkit-touch-callout:default; }
+    .btn-confirm:active { filter:brightness(0.88); }
+    .hold-instruction { font-size:0.82rem; color:rgba(255,255,255,0.55); line-height:1.55; text-align:center; }
+    @keyframes holdPulse { 0%{transform:scale(1);color:rgba(255,255,255,0.55)} 45%{transform:scale(1.04);color:${accent}} 100%{transform:scale(1);color:rgba(255,255,255,0.55)} }
+    .hold-instruction.pulse { animation:holdPulse 0.6s ease; }
+    .btn-decline { padding:13px 24px; border-radius:50px; border:1.5px solid rgba(255,255,255,0.12); background:transparent; color:rgba(255,255,255,0.4); font-size:0.88rem; font-weight:500; cursor:pointer; transition:border-color 0.2s,color 0.2s; font-family:inherit; }
+    .btn-decline:hover { border-color:rgba(255,255,255,0.3); color:rgba(255,255,255,0.75); }
   `;
 }
 
 function ageGateHtml(accent) {
-  const warnIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+  const warnIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
   return `
-  <div class="age-gate" id="ageGate" role="dialog" aria-modal="true" aria-labelledby="ageGateTitle">
+  <div class="age-gate" id="ageGate" role="dialog" aria-modal="true">
     <div class="age-gate-card">
       <div class="age-icon">${warnIcon}</div>
-      <h2 class="age-gate-title" id="ageGateTitle">Adult content</h2>
+      <h2 class="age-gate-title">Adult content</h2>
       <p class="age-gate-text">This content is restricted to users 18+. Please confirm your age in order to continue.</p>
       <div class="age-gate-actions">
         <a class="btn-confirm" id="confirmBtn" href="#" target="_blank" rel="noopener noreferrer">Yes, I'm 18+</a>
-        <p class="hold-instruction" id="holdInstruction">
-          👆 Hold down the button above for 3 seconds to open the link
-        </p>
+        <p class="hold-instruction" id="holdInstruction">👆 Hold down the button above for 3 seconds to open the link</p>
         <button class="btn-decline" onclick="closeAgeGate()">No, take me back</button>
       </div>
     </div>
@@ -151,17 +104,14 @@ function ageGateHtml(accent) {
 
 /* ──────────────────────────────────────────────────────────────────────────
    renderDirectPage — fullscreen age gate, no profile landing page
-   Used when ?go or ?go=linkId is in the URL
+   Neutral fixed design (matches industry standard, no creator theme colors)
    ────────────────────────────────────────────────────────────────────────── */
 function renderDirectPage(profile, link) {
-  const accent = profile.accentColor || '#f4c2c2';
-  const bg = profile.bgColor || '#1a1a1a';
+  const warnIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b06aff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
 
   const script = AGE_GATE_SCRIPT
     .replace('__HANDLE__', escapeJs(profile.handle))
-    .replace('__AUTO_OPEN__',
-      `openAgeGate('${escapeJs(link.url)}', '${escapeJs(link.id)}');`
-    );
+    .replace('__AUTO_OPEN__', '/* direct mode — gate is the page itself, no auto-open needed */');
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -173,28 +123,110 @@ function renderDirectPage(profile, link) {
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       min-height: 100vh;
-      background: ${bg};
+      background: #0e0e0e;
       color: #fff;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .gate-card {
+      background: #1a1a1a;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 22px;
+      padding: 44px 32px 36px;
+      max-width: 340px;
+      width: 100%;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .gate-icon {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: rgba(176,106,255,0.1);
+      border: 1.5px solid rgba(176,106,255,0.35);
       display: flex; align-items: center; justify-content: center;
     }
-    ${ageGateCss(accent)}
-    /* In direct mode the gate is the whole page — no overlay backdrop needed */
-    .age-gate {
-      position: static !important;
-      display: flex !important;
-      background: transparent !important;
-      backdrop-filter: none !important;
-      -webkit-backdrop-filter: none !important;
-      padding: 24px;
-      min-height: 100vh;
+
+    .gate-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.01em;
     }
-    .age-gate-card { animation: none; }
+
+    .gate-text {
+      font-size: 0.88rem;
+      color: rgba(255,255,255,0.48);
+      line-height: 1.65;
+    }
+
+    .gate-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+      margin-top: 6px;
+    }
+
+    /* anchor — iOS long-press shows native "Open Link" → opens in Safari */
+    .btn-confirm {
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px 24px; border-radius: 50px; border: none;
+      background: #c44fa8;
+      color: #ffffff;
+      font-size: 1rem; font-weight: 700; text-decoration: none;
+      cursor: pointer; letter-spacing: 0.02em;
+      transition: filter 0.15s;
+      -webkit-touch-callout: default; /* allow iOS long-press menu */
+    }
+    .btn-confirm:active { filter: brightness(0.85); }
+
+    .hold-instruction {
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.6;
+    }
+    @keyframes holdPulse {
+      0%   { color: rgba(255,255,255,0.55); }
+      45%  { color: #c44fa8; transform: scale(1.03); }
+      100% { color: rgba(255,255,255,0.55); }
+    }
+    .hold-instruction.pulse { animation: holdPulse 0.6s ease; }
   </style>
 </head>
 <body>
-  ${ageGateHtml(accent)}
-  <script>${script}<\/script>
+  <div class="gate-card">
+    <div class="gate-icon">${warnIcon}</div>
+    <h1 class="gate-title">Adult content</h1>
+    <p class="gate-text">This content is restricted to users 18+. Please confirm your age in order to continue.</p>
+    <div class="gate-actions">
+      <a class="btn-confirm" id="confirmBtn" href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer">Yes, I'm 18+</a>
+      <p class="hold-instruction" id="holdInstruction">👆 Hold down the button above for 3 seconds to open the link</p>
+    </div>
+  </div>
+  <script>
+    var btn   = document.getElementById('confirmBtn');
+    var instr = document.getElementById('holdInstruction');
+    if (btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (instr) {
+          instr.classList.remove('pulse');
+          void instr.offsetWidth;
+          instr.classList.add('pulse');
+        }
+      });
+    }
+    function trackClick(id) {
+      try { navigator.sendBeacon('/api/track', JSON.stringify({ handle: '${escapeJs(profile.handle)}', link: id })); } catch(_) {}
+    }
+  <\/script>
 </body>
 </html>`;
 }
