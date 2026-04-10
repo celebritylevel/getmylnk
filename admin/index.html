@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — GetMyLnk</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent: #f4c2c2;
+      --accent-hover: #f0aaaa;
+      --bg: #111;
+      --bg2: #1a1a1a;
+      --bg3: #222;
+      --border: rgba(255,255,255,0.08);
+      --text: #e8e8e8;
+      --muted: rgba(255,255,255,0.4);
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+    }
+
+    /* ── LOGIN ── */
+    #loginScreen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .login-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 44px 36px;
+      width: 100%;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .login-logo { text-align: center; }
+    .login-logo h1 { font-size: 1.4rem; font-weight: 800; color: var(--accent); letter-spacing: 0.02em; }
+    .login-logo p { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+    .form-group { display: flex; flex-direction: column; gap: 7px; }
+    .form-group label { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+    .form-group input, .form-group select, .form-group textarea {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 11px 13px;
+      color: var(--text);
+      font-size: 0.93rem;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+      font-family: inherit;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+    .form-group select { cursor: pointer; }
+    .form-group textarea { resize: vertical; min-height: 70px; }
+
+    .login-btn {
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      color: #1a1a1a;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: 100%;
+    }
+    .login-btn:hover { background: var(--accent-hover); }
+
+    .login-error {
+      background: rgba(255,80,80,0.1);
+      border: 1px solid rgba(255,80,80,0.3);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.82rem;
+      color: #ff8080;
+      text-align: center;
+      display: none;
+    }
+
+    /* ── APP SHELL ── */
+    #app { display: none; min-height: 100vh; }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 56px;
+      border-bottom: 1px solid var(--border);
+      background: #161616;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      gap: 16px;
+    }
+
+    .header-logo { font-size: 1rem; font-weight: 800; color: var(--accent); flex-shrink: 0; }
+
+    .header-nav { display: flex; gap: 4px; flex: 1; }
+    .nav-btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      transition: all 0.2s;
+    }
+    .nav-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+    .nav-btn.active { color: var(--accent); background: rgba(244,194,194,0.1); }
+
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+
+    .btn-sm {
+      padding: 6px 13px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: transparent;
+      color: rgba(255,255,255,0.55);
+      transition: all 0.2s;
+    }
+    .btn-sm:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+    .btn-sm.primary { background: var(--accent); border-color: var(--accent); color: #1a1a1a; font-weight: 700; }
+    .btn-sm.primary:hover { background: var(--accent-hover); }
+    .btn-sm.danger { color: #ff8080; border-color: rgba(255,80,80,0.25); }
+    .btn-sm.danger:hover { background: rgba(255,80,80,0.1); border-color: rgba(255,80,80,0.5); }
+
+    /* ── VIEWS ── */
+    .view { display: none; padding: 28px; max-width: 1100px; margin: 0 auto; }
+    .view.active { display: block; }
+
+    /* ── CREATORS LIST ── */
+    .view-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+      gap: 12px;
+    }
+    .view-title { font-size: 1.1rem; font-weight: 700; }
+
+    .creators-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    .creator-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: border-color 0.2s;
+    }
+    .creator-card:hover { border-color: rgba(255,255,255,0.15); }
+
+    .creator-card-top { display: flex; align-items: center; gap: 12px; }
+    .creator-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(244,194,194,0.1);
+      overflow: hidden;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .creator-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .creator-info { flex: 1; min-width: 0; }
+    .creator-name { font-weight: 700; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .creator-handle { font-size: 0.78rem; color: var(--muted); }
+
+    .creator-status {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+      align-self: flex-start;
+    }
+    .creator-status.active { background: rgba(80,200,120,0.12); color: #50c878; }
+    .creator-status.inactive { background: rgba(255,255,255,0.06); color: var(--muted); }
+
+    .creator-meta { font-size: 0.78rem; color: var(--muted); }
+
+    .creator-card-actions { display: flex; gap: 8px; }
+
+    .empty-creators {
+      text-align: center;
+      padding: 60px 24px;
+      color: var(--muted);
+      grid-column: 1 / -1;
+    }
+    .empty-creators p { margin-bottom: 16px; font-size: 0.9rem; }
+
+    /* ── CREATOR FORM ── */
+    .form-layout { display: flex; flex-direction: column; gap: 22px; max-width: 680px; }
+
+    .form-section {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+    }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 560px) { .form-row { grid-template-columns: 1fr; } }
+
+    .color-row { display: flex; align-items: center; gap: 10px; }
+    .color-row input[type="color"] {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 2px;
+      cursor: pointer;
+      background: transparent;
+      flex-shrink: 0;
+    }
+    .color-row input[type="text"] { flex: 1; }
+
+    /* Links editor */
+    .links-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .link-item {
+      background: var(--bg3);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .link-item-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .link-drag-handle {
+      cursor: grab;
+      color: var(--muted);
+      flex-shrink: 0;
+      padding: 2px;
+      user-select: none;
+    }
+
+    .link-item-title {
+      flex: 1;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .link-toggles { display: flex; gap: 8px; align-items: center; }
+
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle-label input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .link-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 480px) { .link-fields { grid-template-columns: 1fr; } }
+
+    .link-url-row { grid-column: 1 / -1; }
+
+    .btn-add-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px;
+      border-radius: 10px;
+      border: 1px dashed rgba(255,255,255,0.15);
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-add-link:hover { border-color: var(--accent); color: var(--accent); }
+
+    .form-actions { display: flex; gap: 10px; align-items: center; }
+
+    .btn-save {
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      padding: 12px 28px;
+      color: #1a1a1a;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-save:hover { background: var(--accent-hover); }
+    .btn-save:disabled { opacity: 0.5; pointer-events: none; }
+
+    .btn-cancel {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 12px 20px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-cancel:hover { color: var(--text); border-color: rgba(255,255,255,0.3); }
+
+    .form-msg {
+      font-size: 0.82rem;
+      padding: 10px 14px;
+      border-radius: 8px;
+      display: none;
+    }
+    .form-msg.success { background: rgba(80,200,120,0.1); border: 1px solid rgba(80,200,120,0.3); color: #50c878; }
+    .form-msg.error   { background: rgba(255,80,80,0.1);  border: 1px solid rgba(255,80,80,0.3);  color: #ff8080; }
+
+    /* ── ANALYTICS ── */
+    .analytics-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+
+    .creator-select {
+      background: var(--bg2);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-size: 0.85rem;
+      outline: none;
+      cursor: pointer;
+    }
+    .creator-select:focus { border-color: var(--accent); }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 700px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+    }
+    .stat-label { font-size: 0.7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 7px; }
+    .stat-value { font-size: 1.9rem; font-weight: 800; line-height: 1; color: var(--accent); }
+    .stat-sub { font-size: 0.72rem; color: var(--muted); margin-top: 5px; }
+
+    .chart-card, .list-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card-title { font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; }
+
+    .chart-bars { display: flex; align-items: flex-end; gap: 5px; height: 90px; }
+    .chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; height: 100%; }
+    .chart-bar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+    .chart-bar { width: 100%; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 2px; opacity: 0.75; }
+    .chart-bar.today { opacity: 1; box-shadow: 0 0 8px rgba(244,194,194,0.35); }
+    .chart-label { font-size: 0.62rem; color: var(--muted); white-space: nowrap; }
+    .chart-count { font-size: 0.62rem; color: rgba(255,255,255,0.4); }
+
+    .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 600px) { .bottom-grid { grid-template-columns: 1fr; } }
+
+    .list-rows { display: flex; flex-direction: column; gap: 9px; }
+    .list-row { display: flex; align-items: center; gap: 9px; }
+    .row-icon { font-size: 1rem; width: 22px; text-align: center; flex-shrink: 0; }
+    .row-label { flex: 1; font-size: 0.83rem; color: rgba(255,255,255,0.7); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row-count { font-size: 0.8rem; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+    .row-bar-wrap { width: 60px; height: 4px; background: rgba(255,255,255,0.07); border-radius: 2px; flex-shrink: 0; }
+    .row-bar { height: 100%; background: var(--accent); border-radius: 2px; opacity: 0.65; }
+
+    .empty-state { color: var(--muted); font-size: 0.82rem; text-align: center; padding: 18px 0; }
+
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid rgba(244,194,194,0.15);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 32px auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .active-toggle { display: flex; align-items: center; gap: 10px; }
+    .active-toggle label { font-size: 0.88rem; color: rgba(255,255,255,0.65); cursor: pointer; }
+    .active-toggle input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+
+    .preview-link {
+      font-size: 0.78rem;
+      color: var(--accent);
+      text-decoration: none;
+      opacity: 0.7;
+    }
+    .preview-link:hover { opacity: 1; text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<!-- ── LOGIN ── -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>GetMyLnk</h1>
+      <p>Admin Dashboard</p>
+    </div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="username" autocomplete="username" placeholder="admin" />
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="password" autocomplete="current-password" placeholder="••••••••" />
+    </div>
+    <div class="login-error" id="loginError">Invalid username or password.</div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app">
+  <header>
+    <span class="header-logo">GetMyLnk</span>
+    <nav class="header-nav">
+      <button class="nav-btn active" id="navCreators" onclick="showView('creators')">Creators</button>
+      <button class="nav-btn" id="navAnalytics" onclick="showView('analytics')">Analytics</button>
+    </nav>
+    <div class="header-actions">
+      <button class="btn-sm" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- CREATORS LIST -->
+  <div class="view active" id="viewCreators">
+    <div class="view-header">
+      <span class="view-title">Creators</span>
+      <button class="btn-sm primary" onclick="showCreatorForm(null)">+ New Creator</button>
+    </div>
+    <div id="creatorsLoading"><div class="spinner"></div></div>
+    <div class="creators-grid" id="creatorsGrid" style="display:none;"></div>
+  </div>
+
+  <!-- CREATOR FORM (create / edit) -->
+  <div class="view" id="viewCreatorForm">
+    <div class="view-header">
+      <span class="view-title" id="formTitle">New Creator</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <a class="preview-link" id="previewLink" href="#" target="_blank" style="display:none;">↗ Preview</a>
+        <button class="btn-sm" onclick="showView('creators')">← Back</button>
+      </div>
+    </div>
+    <div class="form-msg" id="formMsg"></div>
+    <div class="form-layout">
+
+      <div class="form-section">
+        <div class="section-title">Profile Info</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Handle *</label>
+            <input type="text" id="fHandle" placeholder="ivy" maxlength="32" pattern="[a-z0-9_-]+" />
+          </div>
+          <div class="form-group">
+            <label>Display Name *</label>
+            <input type="text" id="fName" placeholder="Ivy Rose" maxlength="80" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Bio</label>
+          <textarea id="fBio" placeholder="Short bio shown under your name…" maxlength="200"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Avatar URL</label>
+          <input type="url" id="fAvatarUrl" placeholder="https://example.com/photo.jpg" />
+        </div>
+        <div class="active-toggle">
+          <input type="checkbox" id="fActive" checked />
+          <label for="fActive">Profile is active (publicly visible)</label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="section-title">Theme</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Accent Color</label>
+            <div class="color-row">
+              <input type="color" id="fAccentPicker" value="#f4c2c2" oninput="document.getElementById('fAccentColor').value=this.value" />
+              <input type="text" id="fAccentColor" value="#f4c2c2" maxlength="7" placeholder="#f4c2c2" oninput="syncColorPicker('fAccentPicker','fAccentColor')" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Background Color</label>
+            <div class="color-row">
+              <input type="color" id="fBgPicker" value="#1a1a1a" oninput="document.getElementById('fBgColor').value=this.value" />
+              <input type="text" id="fBgColor" value="#1a1a1a" maxlength="7" placeholder="#1a1a1a" oninput="syncColorPicker('fBgPicker','fBgColor')" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="section-title">Links</div>
+        <div class="links-list" id="linksList"></div>
+        <button class="btn-add-link" onclick="addLink()">+ Add Link</button>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-save" id="saveBtn" onclick="saveCreator()">Save Creator</button>
+        <button class="btn-cancel" onclick="showView('creators')">Cancel</button>
+        <button class="btn-sm danger" id="deleteBtn" style="display:none;" onclick="deleteCreator()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div class="view" id="viewAnalytics">
+    <div class="analytics-header">
+      <span class="view-title">Analytics</span>
+      <select class="creator-select" id="analyticsCreatorSelect" onchange="loadAnalytics()">
+        <option value="">All Creators</option>
+      </select>
+      <button class="btn-sm" onclick="loadAnalytics()">Refresh</button>
+    </div>
+    <div id="analyticsLoading"><div class="spinner"></div></div>
+    <div id="analyticsContent" style="display:none;">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Visits</div>
+          <div class="stat-value" id="statTotal">—</div>
+          <div class="stat-sub">all time</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Today</div>
+          <div class="stat-value" id="statToday">—</div>
+          <div class="stat-sub" id="statTodayDate">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Clicks</div>
+          <div class="stat-value" id="statClicks">—</div>
+          <div class="stat-sub">all links</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Top Country</div>
+          <div class="stat-value" id="statTopCountry" style="font-size:1.5rem">—</div>
+          <div class="stat-sub" id="statTopCountrySub">—</div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="card-title">Last 7 Days</div>
+        <div class="chart-bars" id="chartBars"></div>
+      </div>
+
+      <div class="bottom-grid">
+        <div class="list-card">
+          <div class="card-title">Top Countries</div>
+          <div class="list-rows" id="countriesList"></div>
+        </div>
+        <div class="list-card">
+          <div class="card-title">Link Clicks</div>
+          <div class="list-rows" id="clicksList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<script>
+  // ─── State ───
+  let authToken = null;
+  let currentView = 'creators';
+  let editingHandle = null;
+  let allProfiles = [];
+  let linkCounter = 0;
+
+  const ICONS = ['link','heart','coffee','star','camera','video','music','message','globe','shopping'];
+
+  const COUNTRY_NAMES = {
+    US:'United States',GB:'United Kingdom',DE:'Germany',FR:'France',IT:'Italy',
+    ES:'Spain',CA:'Canada',AU:'Australia',NL:'Netherlands',SE:'Sweden',
+    NO:'Norway',DK:'Denmark',FI:'Finland',CH:'Switzerland',AT:'Austria',
+    BE:'Belgium',PL:'Poland',PT:'Portugal',RO:'Romania',CZ:'Czech Republic',
+    HU:'Hungary',TR:'Turkey',RU:'Russia',UA:'Ukraine',BR:'Brazil',MX:'Mexico',
+    AR:'Argentina',CO:'Colombia',CL:'Chile',JP:'Japan',KR:'South Korea',
+    CN:'China',IN:'India',ID:'Indonesia',TH:'Thailand',SG:'Singapore',
+    MY:'Malaysia',PH:'Philippines',VN:'Vietnam',ZA:'South Africa',
+    NG:'Nigeria',EG:'Egypt',IL:'Israel',SA:'Saudi Arabia',AE:'UAE',XX:'Unknown',
+  };
+
+  // ─── Auth ───
+  async function doLogin() {
+    const user = document.getElementById('username').value.trim();
+    const pass = document.getElementById('password').value;
+    const errEl = document.getElementById('loginError');
+    const btn = document.getElementById('loginBtn');
+
+    if (user !== 'admin') { errEl.style.display = 'block'; return; }
+
+    btn.textContent = 'Signing in…'; btn.disabled = true;
+    errEl.style.display = 'none';
+
+    try {
+      const res = await fetch('/api/profiles', { headers: { 'Authorization': 'Bearer ' + pass } });
+      if (res.ok) {
+        authToken = pass;
+        sessionStorage.setItem('admin_token', pass);
+        startApp();
+      } else {
+        errEl.style.display = 'block';
+      }
+    } catch {
+      errEl.textContent = 'Network error. Try again.';
+      errEl.style.display = 'block';
+    }
+
+    btn.textContent = 'Sign In'; btn.disabled = false;
+  }
+
+  function logout() {
+    sessionStorage.removeItem('admin_token');
+    authToken = null;
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('password').value = '';
+  }
+
+  // ─── App start ───
+  async function startApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    await loadCreators();
+  }
+
+  // ─── Navigation ───
+  function showView(view) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    currentView = view;
+
+    const map = { creators: 'viewCreators', creatorForm: 'viewCreatorForm', analytics: 'viewAnalytics' };
+    const navMap = { creators: 'navCreators', analytics: 'navAnalytics' };
+
+    document.getElementById(map[view] || 'viewCreators').classList.add('active');
+    if (navMap[view]) document.getElementById(navMap[view]).classList.add('active');
+
+    if (view === 'analytics') loadAnalytics();
+    if (view === 'creators') loadCreators();
+  }
+
+  // ─── Creators ───
+  async function loadCreators() {
+    document.getElementById('creatorsLoading').style.display = 'block';
+    document.getElementById('creatorsGrid').style.display = 'none';
+
+    try {
+      const res = await fetch('/api/profiles', { headers: { 'Authorization': 'Bearer ' + authToken } });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      allProfiles = data.profiles || [];
+      renderCreators(allProfiles);
+      updateAnalyticsSelect(allProfiles);
+    } catch { }
+
+    document.getElementById('creatorsLoading').style.display = 'none';
+    document.getElementById('creatorsGrid').style.display = 'grid';
+  }
+
+  function renderCreators(profiles) {
+    const grid = document.getElementById('creatorsGrid');
+    if (profiles.length === 0) {
+      grid.innerHTML = `<div class="empty-creators"><p>No creators yet. Create the first one!</p><button class="btn-sm primary" onclick="showCreatorForm(null)">+ New Creator</button></div>`;
+      return;
+    }
+
+    grid.innerHTML = profiles.map(p => {
+      const initials = (p.name || p.handle || '?').slice(0,2).toUpperCase();
+      const avatarHtml = p.avatarUrl
+        ? `<img src="${esc(p.avatarUrl)}" alt="" onerror="this.style.display='none'" />`
+        : initials;
+      return `
+      <div class="creator-card">
+        <div class="creator-card-top">
+          <div class="creator-avatar" style="border: 2px solid ${esc(p.accentColor||'#f4c2c2')}33">${avatarHtml}</div>
+          <div class="creator-info">
+            <div class="creator-name">${esc(p.name)}</div>
+            <div class="creator-handle">getmylnk.com/${esc(p.handle)}</div>
+          </div>
+        </div>
+        <span class="creator-status ${p.active ? 'active' : 'inactive'}">${p.active ? 'Active' : 'Inactive'}</span>
+        <div class="creator-meta">${(p.links||[]).length} link${(p.links||[]).length !== 1 ? 's' : ''}</div>
+        <div class="creator-card-actions">
+          <button class="btn-sm" onclick="showCreatorForm('${esc(p.handle)}')">Edit</button>
+          <button class="btn-sm" onclick="viewCreatorAnalytics('${esc(p.handle)}')">Analytics</button>
+          <a class="btn-sm" href="/${esc(p.handle)}" target="_blank">↗ View</a>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function updateAnalyticsSelect(profiles) {
+    const sel = document.getElementById('analyticsCreatorSelect');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">All Creators</option>' +
+      profiles.map(p => `<option value="${esc(p.handle)}" ${p.handle === current ? 'selected' : ''}>${esc(p.name)} (${esc(p.handle)})</option>`).join('');
+  }
+
+  function viewCreatorAnalytics(handle) {
+    document.getElementById('analyticsCreatorSelect').value = handle;
+    showView('analytics');
+  }
+
+  // ─── Creator Form ───
+  function showCreatorForm(handle) {
+    editingHandle = handle;
+    document.getElementById('formTitle').textContent = handle ? 'Edit Creator' : 'New Creator';
+    document.getElementById('deleteBtn').style.display = handle ? 'inline-flex' : 'none';
+    document.getElementById('fHandle').disabled = !!handle;
+
+    const previewLink = document.getElementById('previewLink');
+    if (handle) {
+      previewLink.href = '/' + handle;
+      previewLink.style.display = 'inline';
+    } else {
+      previewLink.style.display = 'none';
+    }
+
+    hideFormMsg();
+    clearForm();
+
+    if (handle) {
+      const profile = allProfiles.find(p => p.handle === handle);
+      if (profile) fillForm(profile);
+    }
+
+    showView('creatorForm');
+  }
+
+  function clearForm() {
+    document.getElementById('fHandle').value = '';
+    document.getElementById('fName').value = '';
+    document.getElementById('fBio').value = '';
+    document.getElementById('fAvatarUrl').value = '';
+    document.getElementById('fActive').checked = true;
+    document.getElementById('fAccentColor').value = '#f4c2c2';
+    document.getElementById('fAccentPicker').value = '#f4c2c2';
+    document.getElementById('fBgColor').value = '#1a1a1a';
+    document.getElementById('fBgPicker').value = '#1a1a1a';
+    document.getElementById('linksList').innerHTML = '';
+    linkCounter = 0;
+  }
+
+  function fillForm(p) {
+    document.getElementById('fHandle').value = p.handle || '';
+    document.getElementById('fName').value = p.name || '';
+    document.getElementById('fBio').value = p.bio || '';
+    document.getElementById('fAvatarUrl').value = p.avatarUrl || '';
+    document.getElementById('fActive').checked = p.active !== false;
+
+    const accent = p.accentColor || '#f4c2c2';
+    const bg = p.bgColor || '#1a1a1a';
+    document.getElementById('fAccentColor').value = accent;
+    document.getElementById('fAccentPicker').value = accent;
+    document.getElementById('fBgColor').value = bg;
+    document.getElementById('fBgPicker').value = bg;
+
+    (p.links || []).forEach(l => addLink(l));
+  }
+
+  function addLink(data) {
+    const id = 'li_' + (linkCounter++);
+    const list = document.getElementById('linksList');
+
+    const iconOptions = ICONS.map(i => `<option value="${i}" ${(data && data.icon === i) ? 'selected' : ''}>${i}</option>`).join('');
+    const item = document.createElement('div');
+    item.className = 'link-item';
+    item.dataset.linkId = data ? data.id || id : id;
+    item.innerHTML = `
+      <div class="link-item-header">
+        <span class="link-drag-handle" title="Drag to reorder">⠿</span>
+        <span class="link-item-title">${data ? esc(data.label || 'Link') : 'New Link'}</span>
+        <div class="link-toggles">
+          <label class="toggle-label">
+            <input type="checkbox" class="lk-primary" ${data && data.primary ? 'checked' : ''} onchange="updateLinkTitle(this)"> Primary
+          </label>
+          <label class="toggle-label">
+            <input type="checkbox" class="lk-agegate" ${data && data.ageGate ? 'checked' : ''}> 18+
+          </label>
+          <button class="btn-sm danger" style="padding:3px 9px;font-size:0.72rem;" onclick="removeLink(this)">×</button>
+        </div>
+      </div>
+      <div class="link-fields">
+        <div class="form-group">
+          <label>Label</label>
+          <input type="text" class="lk-label" value="${data ? esc(data.label || '') : ''}" placeholder="OnlyFans" maxlength="80" oninput="updateLinkTitle(this)" />
+        </div>
+        <div class="form-group">
+          <label>Icon</label>
+          <select class="lk-icon">${iconOptions}</select>
+        </div>
+        <div class="form-group link-url-row">
+          <label>URL</label>
+          <input type="url" class="lk-url" value="${data ? esc(data.url || '') : ''}" placeholder="https://…" />
+        </div>
+      </div>`;
+    list.appendChild(item);
+    setupDrag(item);
+  }
+
+  function updateLinkTitle(el) {
+    const item = el.closest('.link-item');
+    const label = item.querySelector('.lk-label').value;
+    item.querySelector('.link-item-title').textContent = label || 'Link';
+  }
+
+  function removeLink(btn) {
+    btn.closest('.link-item').remove();
+  }
+
+  function syncColorPicker(pickerId, textId) {
+    const val = document.getElementById(textId).value;
+    if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+      document.getElementById(pickerId).value = val;
+    }
+  }
+
+  function collectLinks() {
+    return [...document.querySelectorAll('.link-item')].map(item => ({
+      id: item.dataset.linkId || ('link_' + Date.now() + '_' + Math.random().toString(36).slice(2)),
+      label: item.querySelector('.lk-label').value.trim(),
+      url: item.querySelector('.lk-url').value.trim(),
+      icon: item.querySelector('.lk-icon').value,
+      primary: item.querySelector('.lk-primary').checked,
+      ageGate: item.querySelector('.lk-agegate').checked,
+    }));
+  }
+
+  async function saveCreator() {
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    hideFormMsg();
+
+    const handle = document.getElementById('fHandle').value.toLowerCase().trim();
+    const payload = {
+      handle,
+      name: document.getElementById('fName').value.trim(),
+      bio: document.getElementById('fBio').value.trim(),
+      avatarUrl: document.getElementById('fAvatarUrl').value.trim(),
+      accentColor: document.getElementById('fAccentColor').value,
+      bgColor: document.getElementById('fBgColor').value,
+      active: document.getElementById('fActive').checked,
+      links: collectLinks(),
+    };
+
+    if (!payload.name) { showFormMsg('error', 'Display name is required.'); btn.disabled = false; btn.textContent = 'Save Creator'; return; }
+    if (!editingHandle && !handle) { showFormMsg('error', 'Handle is required.'); btn.disabled = false; btn.textContent = 'Save Creator'; return; }
+
+    try {
+      let res;
+      if (editingHandle) {
+        res = await fetch(`/api/profile/${editingHandle}`, {
+          method: 'PUT',
+          headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        res = await fetch('/api/profiles', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      const data = await res.json();
+      if (res.ok) {
+        showFormMsg('success', editingHandle ? 'Profile updated!' : 'Creator created!');
+        await loadCreators();
+        if (!editingHandle) {
+          editingHandle = handle;
+          document.getElementById('fHandle').disabled = true;
+          document.getElementById('deleteBtn').style.display = 'inline-flex';
+          const previewLink = document.getElementById('previewLink');
+          previewLink.href = '/' + handle;
+          previewLink.style.display = 'inline';
+        }
+      } else {
+        showFormMsg('error', data.error || 'Save failed.');
+      }
+    } catch {
+      showFormMsg('error', 'Network error.');
+    }
+
+    btn.disabled = false; btn.textContent = 'Save Creator';
+  }
+
+  async function deleteCreator() {
+    if (!editingHandle) return;
+    if (!confirm(`Delete creator "${editingHandle}"? This cannot be undone.`)) return;
+
+    try {
+      const res = await fetch(`/api/profile/${editingHandle}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + authToken },
+      });
+      if (res.ok) {
+        await loadCreators();
+        showView('creators');
+      } else {
+        const d = await res.json();
+        showFormMsg('error', d.error || 'Delete failed.');
+      }
+    } catch {
+      showFormMsg('error', 'Network error.');
+    }
+  }
+
+  function showFormMsg(type, msg) {
+    const el = document.getElementById('formMsg');
+    el.className = 'form-msg ' + type;
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+  function hideFormMsg() {
+    const el = document.getElementById('formMsg');
+    el.style.display = 'none';
+  }
+
+  // ─── Drag-to-reorder links ───
+  let dragSrc = null;
+  function setupDrag(item) {
+    item.draggable = true;
+    item.addEventListener('dragstart', e => { dragSrc = item; item.style.opacity = '0.5'; });
+    item.addEventListener('dragend', () => { item.style.opacity = ''; dragSrc = null; });
+    item.addEventListener('dragover', e => { e.preventDefault(); });
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      if (dragSrc && dragSrc !== item) {
+        const list = item.parentNode;
+        const items = [...list.children];
+        const srcIdx = items.indexOf(dragSrc);
+        const dstIdx = items.indexOf(item);
+        if (srcIdx < dstIdx) list.insertBefore(dragSrc, item.nextSibling);
+        else list.insertBefore(dragSrc, item);
+      }
+    });
+  }
+
+  // ─── Analytics ───
+  async function loadAnalytics() {
+    const handle = document.getElementById('analyticsCreatorSelect').value;
+    document.getElementById('analyticsLoading').style.display = 'block';
+    document.getElementById('analyticsContent').style.display = 'none';
+
+    try {
+      const url = handle ? `/api/analytics?handle=${encodeURIComponent(handle)}` : '/api/analytics';
+      const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + authToken } });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+
+      let pv, countries, clicks;
+      if (handle) {
+        pv = data.pageviews || { total: 0, days: {} };
+        countries = data.countries || {};
+        clicks = data.clicks || {};
+      } else {
+        pv = (data.aggregate || {}).pageviews || { total: 0, days: {} };
+        countries = (data.aggregate || {}).countries || {};
+        clicks = (data.aggregate || {}).clicks || {};
+      }
+
+      renderAnalytics(pv, countries, clicks);
+    } catch { }
+
+    document.getElementById('analyticsLoading').style.display = 'none';
+    document.getElementById('analyticsContent').style.display = 'block';
+  }
+
+  function renderAnalytics(pv, countries, clicks) {
+    const today = new Date().toISOString().split('T')[0];
+
+    document.getElementById('statTotal').textContent = fmt(pv.total);
+    document.getElementById('statToday').textContent = fmt((pv.days || {})[today] || 0);
+    document.getElementById('statTodayDate').textContent = today;
+
+    const totalClicks = Object.values(clicks || {}).reduce((a, b) => a + b, 0);
+    document.getElementById('statClicks').textContent = fmt(totalClicks);
+
+    const sortedCountries = Object.entries(countries || {}).sort((a, b) => b[1] - a[1]);
+    if (sortedCountries.length > 0) {
+      const [topCode] = sortedCountries[0];
+      document.getElementById('statTopCountry').textContent = flagEmoji(topCode) + ' ' + topCode;
+      document.getElementById('statTopCountrySub').textContent = COUNTRY_NAMES[topCode] || topCode;
+    } else {
+      document.getElementById('statTopCountry').textContent = '—';
+      document.getElementById('statTopCountrySub').textContent = '—';
+    }
+
+    // 7-day chart
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      days.push(d.toISOString().split('T')[0]);
+    }
+    const dayValues = days.map(d => (pv.days || {})[d] || 0);
+    const maxVal = Math.max(...dayValues, 1);
+    const chartEl = document.getElementById('chartBars');
+    chartEl.innerHTML = '';
+    days.forEach((d, i) => {
+      const pct = Math.round((dayValues[i] / maxVal) * 100);
+      const isToday = d === today;
+      chartEl.innerHTML += `<div class="chart-col"><div class="chart-count">${dayValues[i] || ''}</div><div class="chart-bar-wrap"><div class="chart-bar${isToday?' today':''}" style="height:${pct}%"></div></div><div class="chart-label">${d.slice(5)}</div></div>`;
+    });
+
+    // Countries
+    const countriesEl = document.getElementById('countriesList');
+    const topC = sortedCountries.slice(0, 8);
+    const maxC = topC[0] ? topC[0][1] : 1;
+    countriesEl.innerHTML = topC.length === 0
+      ? '<div class="empty-state">No data yet</div>'
+      : topC.map(([code, count]) => `<div class="list-row"><span class="row-icon">${flagEmoji(code)}</span><span class="row-label">${COUNTRY_NAMES[code]||code}</span><div class="row-bar-wrap"><div class="row-bar" style="width:${Math.round(count/maxC*100)}%"></div></div><span class="row-count">${fmt(count)}</span></div>`).join('');
+
+    // Clicks
+    const clicksEl = document.getElementById('clicksList');
+    const sortedClicks = Object.entries(clicks || {}).sort((a, b) => b[1] - a[1]);
+    const maxCl = sortedClicks[0] ? sortedClicks[0][1] : 1;
+    clicksEl.innerHTML = sortedClicks.length === 0
+      ? '<div class="empty-state">No clicks yet</div>'
+      : sortedClicks.map(([key, count]) => `<div class="list-row"><span class="row-icon">🔗</span><span class="row-label">${esc(key)}</span><div class="row-bar-wrap"><div class="row-bar" style="width:${Math.round(count/maxCl*100)}%"></div></div><span class="row-count">${fmt(count)}</span></div>`).join('');
+  }
+
+  // ─── Utils ───
+  function fmt(n) { return (n || 0).toLocaleString(); }
+
+  function flagEmoji(code) {
+    if (!code || code === 'XX' || code.length !== 2) return '🌍';
+    try { return [...code.toUpperCase()].map(c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)).join(''); }
+    catch { return '🌍'; }
+  }
+
+  function esc(s) {
+    if (typeof s !== 'string') return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
+
+  // ─── Init ───
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('password').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+
+    const saved = sessionStorage.getItem('admin_token');
+    if (saved) { authToken = saved; startApp(); }
+  });
+</script>
+
+</body>
+</html>
