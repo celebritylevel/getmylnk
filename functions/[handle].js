@@ -42,16 +42,50 @@ const AGE_GATE_SCRIPT = `
     var instr = document.getElementById('holdInstruction');
     var gate  = document.getElementById('ageGate');
 
+    var isIOS     = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    var isAndroid = /Android/i.test(navigator.userAgent);
+    var isMobile  = isIOS || isAndroid;
+
+    if (instr) {
+      if (isIOS)          instr.textContent = '👆 Hold the button for 3 sec — then tap "Open Link" to open in Safari';
+      else if (isAndroid) instr.textContent = '👆 Hold the button for 3 seconds to open the link in Chrome';
+      else                instr.textContent = '🖱️ Click the button above to confirm and open the link';
+    }
+
     if (btn) {
-      /* ALWAYS block tap/click — must long-press for iOS "Open Link" */
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        if (instr) {
-          instr.classList.remove('pulse');
-          void instr.offsetWidth;
-          instr.classList.add('pulse');
+      /* Mobile only: block plain tap — must hold */
+      if (isMobile) {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          if (instr) {
+            instr.classList.remove('pulse');
+            void instr.offsetWidth;
+            instr.classList.add('pulse');
+          }
+        });
+      }
+
+      /* Android: JS hold timer — fires window.open inside active touch */
+      if (isAndroid) {
+        var holdTimer = null;
+        var holding   = false;
+        btn.addEventListener('touchstart', function() {
+          holding = true;
+          btn.style.transition = 'filter 3s linear';
+          btn.style.filter = 'brightness(1.3)';
+          holdTimer = setTimeout(function() {
+            if (holding) window.open(btn.href, '_blank');
+          }, 3000);
+        }, { passive: true });
+        function cancelHold() {
+          holding = false;
+          clearTimeout(holdTimer);
+          btn.style.transition = 'filter 0.2s';
+          btn.style.filter = '';
         }
-      });
+        btn.addEventListener('touchend', cancelHold);
+        btn.addEventListener('touchcancel', cancelHold);
+      }
     }
 
     if (gate) {
