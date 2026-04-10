@@ -206,7 +206,7 @@ function renderDirectPage(profile, link) {
     <h1 class="gate-title">Adult content</h1>
     <p class="gate-text">This content is restricted to users 18+. Please confirm your age in order to continue.</p>
     <div class="gate-actions">
-      <a class="btn-confirm" id="confirmBtn" href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer">Yes, I'm 18+</a>
+      <a class="btn-confirm" id="confirmBtn" href="/go/${escapeHtml(profile.handle)}/${escapeHtml(link.id)}" target="_blank" rel="noopener noreferrer">Yes, I'm 18+</a>
       <p class="hold-instruction" id="holdInstruction">👆 Hold down the button above for 3 seconds to open the link</p>
     </div>
   </div>
@@ -222,9 +222,6 @@ function renderDirectPage(profile, link) {
           instr.classList.add('pulse');
         }
       });
-    }
-    function trackClick(id) {
-      try { navigator.sendBeacon('/api/track', JSON.stringify({ handle: '${escapeJs(profile.handle)}', link: id })); } catch(_) {}
     }
   <\/script>
 </body>
