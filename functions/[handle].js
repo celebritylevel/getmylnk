@@ -207,22 +207,81 @@ function renderDirectPage(profile, link) {
     <p class="gate-text">This content is restricted to users 18+. Please confirm your age in order to continue.</p>
     <div class="gate-actions">
       <a class="btn-confirm" id="confirmBtn" href="/go/${escapeHtml(profile.handle)}/${escapeHtml(link.id)}" target="_blank" rel="noopener noreferrer">Yes, I'm 18+</a>
-      <p class="hold-instruction" id="holdInstruction">👆 Hold down the button above for 3 seconds to open the link</p>
+      <p class="hold-instruction" id="holdInstruction">👆 Hold down the button above to open the link</p>
     </div>
   </div>
   <script>
-    var btn   = document.getElementById('confirmBtn');
-    var instr = document.getElementById('holdInstruction');
-    if (btn) {
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        if (instr) {
-          instr.classList.remove('pulse');
-          void instr.offsetWidth;
-          instr.classList.add('pulse');
-        }
-      });
-    }
+    (function() {
+      var btn   = document.getElementById('confirmBtn');
+      var instr = document.getElementById('holdInstruction');
+      var url   = '/go/${escapeJs(profile.handle)}/${escapeJs(link.id)}';
+
+      var isIOS     = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      var isAndroid = /Android/i.test(navigator.userAgent);
+
+      // Tailor instruction text per platform
+      if (instr) {
+        if (isIOS)     instr.textContent = '👆 Hold down the button for 3 sec — then tap "Open Link" to open in Safari';
+        else if (isAndroid) instr.textContent = '👆 Hold down the button for 3 seconds to open the link in Chrome';
+        else           instr.textContent = '👆 Hold down the button for 3 seconds to open the link';
+      }
+
+      // Always block plain tap
+      if (btn) {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          pulse();
+        });
+      }
+
+      // Android: JS hold timer — holds 3s then window.open() fires inside active touch gesture
+      if (isAndroid && btn) {
+        var holdTimer = null;
+        var holding   = false;
+
+        btn.addEventListener('touchstart', function(e) {
+          holding = true;
+          startProgress();
+          holdTimer = setTimeout(function() {
+            if (holding) {
+              window.open(url, '_blank');
+            }
+          }, 3000);
+        }, { passive: true });
+
+        btn.addEventListener('touchend', function() {
+          holding = false;
+          clearTimeout(holdTimer);
+          stopProgress();
+        });
+
+        btn.addEventListener('touchcancel', function() {
+          holding = false;
+          clearTimeout(holdTimer);
+          stopProgress();
+        });
+      }
+
+      function pulse() {
+        if (!instr) return;
+        instr.classList.remove('pulse');
+        void instr.offsetWidth;
+        instr.classList.add('pulse');
+      }
+
+      // Simple visual progress ring on the button while holding
+      var progressEl = null;
+      function startProgress() {
+        if (!btn) return;
+        btn.style.transition = 'filter 3s linear';
+        btn.style.filter = 'brightness(1.3)';
+      }
+      function stopProgress() {
+        if (!btn) return;
+        btn.style.transition = 'filter 0.2s';
+        btn.style.filter = '';
+      }
+    })();
   <\/script>
 </body>
 </html>`;
