@@ -546,6 +546,10 @@
           <input type="checkbox" id="fActive" checked />
           <label for="fActive">Profile is active (publicly visible)</label>
         </div>
+        <div class="active-toggle">
+          <input type="checkbox" id="fDirectGate" checked />
+          <label for="fDirectGate">Show adult gate directly (skip landing page) — recommended</label>
+        </div>
       </div>
 
       <div class="form-section">
@@ -812,6 +816,7 @@
     document.getElementById('fBio').value = '';
     document.getElementById('fAvatarUrl').value = '';
     document.getElementById('fActive').checked = true;
+    document.getElementById('fDirectGate').checked = true;
     document.getElementById('fAccentColor').value = '#f4c2c2';
     document.getElementById('fAccentPicker').value = '#f4c2c2';
     document.getElementById('fBgColor').value = '#1a1a1a';
@@ -826,6 +831,7 @@
     document.getElementById('fBio').value = p.bio || '';
     document.getElementById('fAvatarUrl').value = p.avatarUrl || '';
     document.getElementById('fActive').checked = p.active !== false;
+    document.getElementById('fDirectGate').checked = p.directGate !== false;
 
     const accent = p.accentColor || '#f4c2c2';
     const bg = p.bgColor || '#1a1a1a';
@@ -957,6 +963,7 @@
       accentColor: document.getElementById('fAccentColor').value,
       bgColor: document.getElementById('fBgColor').value,
       active: document.getElementById('fActive').checked,
+      directGate: document.getElementById('fDirectGate').checked,
       links: collectLinks(),
     };
 

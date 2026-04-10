@@ -356,13 +356,16 @@ export async function onRequestGet(context) {
   // ?profile=1 lets admin preview the full profile page
   const forceProfile = url.searchParams.has('profile');
 
-  // Default: if any age-gated link exists, go straight to fullscreen gate
-  if (!forceProfile) {
-    const goId = url.searchParams.get('go'); // still support ?go=linkId for specific link
+  // Default: show adult gate directly UNLESS the creator opted into landing page (directGate === false)
+  // directGate defaults to true — every new profile goes straight to the gate
+  const showGate = profile.directGate !== false;
+
+  if (!forceProfile && showGate) {
+    const goId = url.searchParams.get('go');
     const link =
       (goId && links.find(l => l.id === goId)) ||
-      links.find(l => l.ageGate && l.primary) ||
-      links.find(l => l.ageGate);
+      links.find(l => l.primary) ||
+      links[0]; // fall back to first link regardless of ageGate flag
 
     if (link) {
       return new Response(renderDirectPage(profile, link), {

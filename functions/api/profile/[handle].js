@@ -50,6 +50,7 @@ export async function onRequestPut(context) {
       bgColor: /^#[0-9a-fA-F]{6}$/.test(body.bgColor) ? body.bgColor : existing.bgColor,
       links: body.links !== undefined ? sanitizeLinks(body.links) : existing.links,
       active: body.active !== undefined ? Boolean(body.active) : existing.active,
+      directGate: body.directGate !== undefined ? Boolean(body.directGate) : (existing.directGate !== false),
       updatedAt: new Date().toISOString(),
     };
 

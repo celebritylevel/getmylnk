@@ -69,6 +69,7 @@ export async function onRequestPost(context) {
       bgColor: /^#[0-9a-fA-F]{6}$/.test(body.bgColor) ? body.bgColor : '#1a1a1a',
       links: sanitizeLinks(body.links || []),
       active: body.active !== false,
+      directGate: body.directGate !== false, // default true — go straight to adult gate
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
