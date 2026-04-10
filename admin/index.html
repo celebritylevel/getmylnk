@@ -876,7 +876,7 @@
       </div>
       <div class="direct-link-row" style="display:${isAgeGate ? 'flex' : 'none'}; align-items:center; gap:8px; padding-top:2px;">
         <span style="font-size:0.72rem; color:var(--muted); flex:1;">
-          Direct link (Instagram bio) →
+          Instagram bio link →
           <span class="direct-link-url" style="color:var(--accent); word-break:break-all;"></span>
         </span>
         <button class="btn-sm" style="flex-shrink:0; font-size:0.72rem;" onclick="copyDirectLink(this)">📋 Copy</button>
@@ -894,10 +894,9 @@
   }
 
   function updateDirectLinkUrl(item) {
-    const linkId = item.dataset.linkId;
     const row = item.querySelector('.direct-link-url');
     if (row && editingHandle) {
-      row.textContent = `getmylnk.com/${editingHandle}?go=${linkId}`;
+      row.textContent = `getmylnk.com/${editingHandle}`;
     } else if (row) {
       row.textContent = '(save creator first)';
     }
@@ -905,9 +904,8 @@
 
   function copyDirectLink(btn) {
     const item = btn.closest('.link-item');
-    const linkId = item.dataset.linkId;
     if (!editingHandle) { alert('Save the creator first to get the direct link.'); return; }
-    const url = `https://getmylnk.com/${editingHandle}?go=${linkId}`;
+    const url = `https://getmylnk.com/${editingHandle}`;
     navigator.clipboard.writeText(url).then(() => {
       const orig = btn.textContent;
       btn.textContent = '✓ Copied!';

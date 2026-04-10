@@ -318,20 +318,21 @@ export async function onRequestGet(context) {
     return new Response(notFoundPage(handle), { status: 404, headers: { 'Content-Type': 'text/html;charset=UTF-8' } });
   }
 
-  /* ?go or ?go=linkId — render direct age gate page (skip profile) */
+  const links = profile.links || [];
   const url = new URL(request.url);
-  if (url.searchParams.has('go')) {
-    const goId = url.searchParams.get('go');
-    const links = profile.links || [];
-    // Find the requested link, or fall back to first primary age-gated, or first age-gated
+
+  // ?profile=1 lets admin preview the full profile page
+  const forceProfile = url.searchParams.has('profile');
+
+  // Default: if any age-gated link exists, go straight to fullscreen gate
+  if (!forceProfile) {
+    const goId = url.searchParams.get('go'); // still support ?go=linkId for specific link
     const link =
       (goId && links.find(l => l.id === goId)) ||
       links.find(l => l.ageGate && l.primary) ||
       links.find(l => l.ageGate);
 
-    if (!link) {
-      // No age-gated link found — fall through to normal profile
-    } else {
+    if (link) {
       return new Response(renderDirectPage(profile, link), {
         headers: {
           'Content-Type': 'text/html;charset=UTF-8',
