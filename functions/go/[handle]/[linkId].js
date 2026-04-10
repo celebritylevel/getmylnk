@@ -20,15 +20,33 @@ export async function onRequestGet(context) {
   const link = (profile.links || []).find(l => l.id === linkId);
   if (!link || !link.url) return new Response(null, { status: 404 });
 
-  // Record click in background — don't block the redirect
-  const today = new Date().toISOString().split('T')[0];
-  context.waitUntil(recordClick(kv, handle, linkId, today));
+  // Deduplicate: one click per user per link per 24 hours via cookie
+  const cookieName = `c_${handle}_${linkId}`;
+  const cookies = parseCookies(context.request.headers.get('Cookie') || '');
+  const alreadyCounted = cookies[cookieName] === '1';
 
-  // Redirect to destination
+  if (!alreadyCounted) {
+    const today = new Date().toISOString().split('T')[0];
+    context.waitUntil(recordClick(kv, handle, linkId, today));
+  }
+
+  // Redirect to destination; set dedup cookie (24h)
   return new Response(null, {
     status: 302,
-    headers: { Location: link.url },
+    headers: {
+      Location: link.url,
+      'Set-Cookie': `${cookieName}=1; Max-Age=86400; Path=/go/${handle}/${linkId}; SameSite=Lax`,
+    },
   });
+}
+
+function parseCookies(header) {
+  const out = {};
+  for (const part of header.split(';')) {
+    const [k, ...v] = part.trim().split('=');
+    if (k) out[k.trim()] = v.join('=').trim();
+  }
+  return out;
 }
 
 async function recordClick(kv, handle, link, today) {
