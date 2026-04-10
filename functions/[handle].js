@@ -223,11 +223,11 @@ function renderDirectPage(profile, link) {
       if (instr) {
         if (isIOS)     instr.textContent = '👆 Hold down the button for 3 sec — then tap "Open Link" to open in Safari';
         else if (isAndroid) instr.textContent = '👆 Hold down the button for 3 seconds to open the link in Chrome';
-        else           instr.textContent = '👆 Hold down the button for 3 seconds to open the link';
+        else           instr.textContent = '🖱️ Click the button above to confirm and open the link';
       }
 
-      // Always block plain tap
-      if (btn) {
+      // Mobile: block plain tap (must hold). Desktop: allow normal click.
+      if (btn && (isIOS || isAndroid)) {
         btn.addEventListener('click', function(e) {
           e.preventDefault();
           pulse();
