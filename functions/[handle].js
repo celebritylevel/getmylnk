@@ -29,59 +29,30 @@ function renderProfilePage(profile) {
   const buttonsHtml = links.map(link => {
     const icon = getIcon(link.icon || 'link');
     const isPrimary = link.primary ? ' btn-primary' : '';
-    const hasAgeGate = link.ageGate;
-    const clickAttr = hasAgeGate
-      ? `onclick="openAgeGate('${escapeHtml(link.url)}', '${escapeHtml(link.id)}')" href="#"`
-      : `href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer" onclick="trackClick('${escapeHtml(link.id)}')"`;
-
-    return `<a class="btn${isPrimary}" ${clickAttr}><span class="btn-icon">${icon}</span>${escapeHtml(link.label)}</a>`;
+    if (link.ageGate) {
+      // Age-gated: trigger the modal on click
+      return `<button class="btn${isPrimary}" onclick="openAgeGate('${escapeJs(link.url)}','${escapeJs(link.id)}')"><span class="btn-icon">${icon}</span>${escapeHtml(link.label)}</button>`;
+    }
+    return `<a class="btn${isPrimary}" href="${escapeHtml(link.url)}" target="_blank" rel="noopener noreferrer" onclick="trackClick('${escapeJs(link.id)}')" ><span class="btn-icon">${icon}</span>${escapeHtml(link.label)}</a>`;
   }).join('\n      ');
 
-  // Only include age gate if at least one link needs it
   const needsAgeGate = links.some(l => l.ageGate);
   const ageGateHtml = needsAgeGate ? `
   <div class="age-gate" id="ageGate" role="dialog" aria-modal="true" aria-labelledby="ageGateTitle">
     <div class="age-gate-card">
       <div class="age-badge">18+</div>
-      <h2 class="age-gate-title" id="ageGateTitle">Adults only</h2>
-      <p class="age-gate-text">This content is intended for adults aged 18 and over. Please confirm your age to continue.</p>
+      <h2 class="age-gate-title" id="ageGateTitle">Adult content</h2>
+      <p class="age-gate-text">This content is for adults 18 and over. Confirm your age to continue.</p>
       <div class="age-gate-actions">
-        <button class="btn-confirm" onclick="confirmAge()">Yes, I am 18 or older</button>
+        <!-- anchor tag so iOS long-press shows native "Open Link" context menu -->
+        <a class="btn-confirm" id="confirmBtn" href="#" target="_blank" rel="noopener noreferrer">Yes, I'm 18+</a>
+        <p class="hold-instruction" id="holdInstruction">
+          <span class="hold-icon">👆</span> Hold down the button above for 3 seconds to open the link
+        </p>
         <button class="btn-decline" onclick="closeAgeGate()">No, take me back</button>
       </div>
     </div>
   </div>` : '';
-
-  const ageGateScript = needsAgeGate ? `
-    let _pendingUrl = null;
-    let _pendingId = null;
-
-    function openAgeGate(url, id) {
-      _pendingUrl = url;
-      _pendingId = id;
-      document.getElementById('ageGate').classList.add('visible');
-      document.body.style.overflow = 'hidden';
-    }
-    function closeAgeGate() {
-      document.getElementById('ageGate').classList.remove('visible');
-      document.body.style.overflow = '';
-      _pendingUrl = null;
-      _pendingId = null;
-    }
-    function confirmAge() {
-      const url = _pendingUrl;
-      const id = _pendingId;
-      closeAgeGate();
-      if (id) trackClick(id);
-      if (url) window.open(url, '_blank', 'noopener,noreferrer');
-    }
-    document.addEventListener('DOMContentLoaded', () => {
-      const gate = document.getElementById('ageGate');
-      if (gate) {
-        gate.addEventListener('click', e => { if (e.target === gate) closeAgeGate(); });
-        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAgeGate(); });
-      }
-    });` : '';
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -110,15 +81,9 @@ function renderProfilePage(profile) {
       gap: 20px;
     }
     .avatar-wrap {
-      width: 110px;
-      height: 110px;
-      border-radius: 50%;
+      width: 110px; height: 110px; border-radius: 50%;
       background-color: ${accent}33;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+      overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .avatar-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .avatar-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
@@ -126,40 +91,22 @@ function renderProfilePage(profile) {
     .creator-bio { font-size: 0.92rem; color: rgba(255,255,255,0.55); text-align: center; max-width: 300px; line-height: 1.5; }
     .buttons { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 380px; }
     .btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 15px 24px;
-      border-radius: 50px;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 15px 24px; border-radius: 50px;
       border: 1.5px solid rgba(255,255,255,0.22);
       background: rgba(255,255,255,0.06);
-      color: #ffffff;
-      font-size: 1rem;
-      font-weight: 600;
-      text-decoration: none;
-      letter-spacing: 0.02em;
+      color: #ffffff; font-size: 1rem; font-weight: 600;
+      text-decoration: none; letter-spacing: 0.02em;
       transition: background 0.2s, border-color 0.2s, transform 0.1s;
-      cursor: pointer;
+      cursor: pointer; font-family: inherit;
     }
     .btn:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.45); transform: translateY(-1px); }
     .btn:active { transform: translateY(0); }
     .btn-primary { background: ${accent}; border-color: ${accent}; color: #1a1a1a; }
     .btn-primary:hover { filter: brightness(0.92); border-color: transparent; color: #1a1a1a; }
     .btn-icon { font-size: 1.1rem; flex-shrink: 0; display: flex; align-items: center; }
-    footer {
-      text-align: center;
-      padding: 20px 16px;
-      border-top: 1px solid rgba(255,255,255,0.07);
-    }
-    .footer-links {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 6px 4px;
-      margin-bottom: 8px;
-    }
+    footer { text-align: center; padding: 20px 16px; border-top: 1px solid rgba(255,255,255,0.07); }
+    .footer-links { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px 4px; margin-bottom: 8px; }
     .footer-links a { color: rgba(255,255,255,0.35); font-size: 0.75rem; text-decoration: none; padding: 2px 6px; transition: color 0.2s; }
     .footer-links a:hover { color: rgba(255,255,255,0.7); }
     .footer-sep { color: rgba(255,255,255,0.15); font-size: 0.75rem; }
@@ -167,42 +114,67 @@ function renderProfilePage(profile) {
     .powered { margin-top: 6px; }
     .powered a { color: ${accent}; opacity: 0.6; font-size: 0.7rem; text-decoration: none; }
     .powered a:hover { opacity: 1; }
-    /* Age gate */
+
+    /* ── Age gate ── */
     .age-gate {
       display: none; position: fixed; inset: 0; z-index: 100;
-      background: rgba(0,0,0,0.85); backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+      background: rgba(0,0,0,0.88); backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       align-items: center; justify-content: center; padding: 24px;
     }
     .age-gate.visible { display: flex; }
     .age-gate-card {
       background: #242424; border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 20px; padding: 40px 32px; max-width: 380px; width: 100%;
+      border-radius: 22px; padding: 40px 28px; max-width: 360px; width: 100%;
       text-align: center; display: flex; flex-direction: column; align-items: center;
-      gap: 16px; animation: fadeUp 0.25s ease;
+      gap: 14px; animation: fadeUp 0.25s ease;
     }
-    @keyframes fadeUp { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
     .age-badge {
-      width: 64px; height: 64px; border-radius: 50%;
+      width: 60px; height: 60px; border-radius: 50%;
       background: ${accent}1f; border: 2px solid ${accent};
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.5rem; font-weight: 800; color: ${accent}; letter-spacing: -1px;
+      font-size: 1.4rem; font-weight: 800; color: ${accent}; letter-spacing: -1px;
     }
-    .age-gate-title { font-size: 1.25rem; font-weight: 700; }
-    .age-gate-text { font-size: 0.88rem; color: rgba(255,255,255,0.5); line-height: 1.6; }
-    .age-gate-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 8px; }
+    .age-gate-title { font-size: 1.2rem; font-weight: 700; }
+    .age-gate-text { font-size: 0.86rem; color: rgba(255,255,255,0.5); line-height: 1.6; }
+    .age-gate-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 4px; }
+
+    /* Confirm button is an <a> tag — critical for iOS long-press "Open Link" */
     .btn-confirm {
-      padding: 14px 24px; border-radius: 50px; border: none;
-      background: ${accent}; color: #1a1a1a; font-size: 0.95rem; font-weight: 700;
-      cursor: pointer; transition: filter 0.2s, transform 0.1s; letter-spacing: 0.02em;
+      display: flex; align-items: center; justify-content: center;
+      padding: 15px 24px; border-radius: 50px; border: none;
+      background: ${accent}; color: #1a1a1a;
+      font-size: 1rem; font-weight: 700; text-decoration: none;
+      cursor: pointer; letter-spacing: 0.02em;
+      transition: filter 0.15s, transform 0.1s;
+      /* Allow iOS native long-press context menu */
+      -webkit-touch-callout: default;
     }
-    .btn-confirm:hover { filter: brightness(0.92); transform: translateY(-1px); }
-    .btn-confirm:active { transform: translateY(0); }
+    .btn-confirm:hover { filter: brightness(0.92); }
+    .btn-confirm:active { transform: scale(0.97); }
+
+    /* Hold instruction — shown only in Instagram/in-app browser via JS */
+    .hold-instruction {
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.65);
+      line-height: 1.55;
+      display: none; /* JS shows this when in-app browser detected */
+    }
+    .hold-instruction .hold-icon { font-size: 1rem; }
+    @keyframes holdPulse {
+      0%   { transform: scale(1);    color: rgba(255,255,255,0.65); }
+      40%  { transform: scale(1.04); color: ${accent}; }
+      100% { transform: scale(1);    color: rgba(255,255,255,0.65); }
+    }
+    .hold-instruction.pulse { animation: holdPulse 0.55s ease; }
+
     .btn-decline {
-      padding: 14px 24px; border-radius: 50px;
-      border: 1.5px solid rgba(255,255,255,0.15); background: transparent;
-      color: rgba(255,255,255,0.5); font-size: 0.9rem; font-weight: 500; cursor: pointer;
-      transition: border-color 0.2s, color 0.2s;
+      padding: 13px 24px; border-radius: 50px;
+      border: 1.5px solid rgba(255,255,255,0.14);
+      background: transparent; color: rgba(255,255,255,0.45);
+      font-size: 0.9rem; font-weight: 500; cursor: pointer;
+      transition: border-color 0.2s, color 0.2s; font-family: inherit;
     }
     .btn-decline:hover { border-color: rgba(255,255,255,0.35); color: rgba(255,255,255,0.8); }
   </style>
@@ -218,12 +190,75 @@ function renderProfilePage(profile) {
   </main>
   ${ageGateHtml}
   <script>
+    /* ── Track clicks ── */
     function trackClick(linkId) {
-      try {
-        navigator.sendBeacon('/api/track', JSON.stringify({ handle: '${escapeHtml(profile.handle)}', link: linkId }));
-      } catch (_) {}
+      try { navigator.sendBeacon('/api/track', JSON.stringify({ handle: '${escapeJs(profile.handle)}', link: linkId })); } catch(_) {}
     }
-    ${ageGateScript}
+
+    /* ── In-app browser detection ── */
+    function isInAppBrowser() {
+      var ua = navigator.userAgent || '';
+      return /Instagram|FBAN|FBAV|TikTok|musical_ly|Snapchat|Line\\/|MicroMessenger|Twitter/i.test(ua);
+    }
+
+    /* ── Age gate ── */
+    var _pendingUrl = null;
+    var _pendingId  = null;
+
+    function openAgeGate(url, id) {
+      _pendingUrl = url;
+      _pendingId  = id;
+      var btn = document.getElementById('confirmBtn');
+      if (btn) btn.href = url;
+      document.getElementById('ageGate').classList.add('visible');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeAgeGate() {
+      document.getElementById('ageGate').classList.remove('visible');
+      document.body.style.overflow = '';
+      _pendingUrl = null;
+      _pendingId  = null;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var gate  = document.getElementById('ageGate');
+      var btn   = document.getElementById('confirmBtn');
+      var instr = document.getElementById('holdInstruction');
+      var inApp = isInAppBrowser();
+
+      /* Show hold instruction only inside Instagram / in-app browsers */
+      if (instr) instr.style.display = inApp ? 'block' : 'none';
+
+      if (btn) {
+        btn.addEventListener('click', function(e) {
+          if (inApp) {
+            /* In Instagram's browser: block normal navigation.
+               User must long-press → iOS shows "Open Link" → opens in Safari. */
+            e.preventDefault();
+            if (instr) {
+              instr.classList.remove('pulse');
+              void instr.offsetWidth; /* reflow to restart animation */
+              instr.classList.add('pulse');
+            }
+          } else {
+            /* Normal browser: handle it ourselves */
+            e.preventDefault();
+            var url = _pendingUrl;
+            var id  = _pendingId;
+            closeAgeGate();
+            if (id)  trackClick(id);
+            if (url) window.open(url, '_blank', 'noopener,noreferrer');
+          }
+        });
+      }
+
+      /* Close on backdrop click */
+      if (gate) {
+        gate.addEventListener('click', function(e) { if (e.target === gate) closeAgeGate(); });
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeAgeGate(); });
+      }
+    });
   </script>
   <footer>
     <div class="footer-links">
@@ -252,12 +287,18 @@ function escapeHtml(str) {
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 
+function escapeJs(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"').replace(/\n/g,'\\n').replace(/\r/g,'\\r');
+}
+
 export async function onRequestGet(context) {
-  const { params, env } = context;
+  const { params, env, next } = context;
   const handle = (params.handle || '').toLowerCase().trim();
 
+  /* Reserved paths — pass through to static asset server (admin, privacy, etc.) */
   if (!handle || RESERVED.has(handle) || !/^[a-z0-9_-]{1,32}$/.test(handle)) {
-    return new Response(null, { status: 404 });
+    return next();
   }
 
   const kv = env.ANALYTICS_KV;
