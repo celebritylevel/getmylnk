@@ -864,7 +864,7 @@
     form.append('file', file);
     const res = await fetch(`/api/avatar/${handle}`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${authToken}` },
       body: form,
     });
     const data = await res.json();
@@ -1085,8 +1085,8 @@
       } else {
         showFormMsg('error', data.error || 'Save failed.');
       }
-    } catch {
-      showFormMsg('error', 'Network error.');
+    } catch (err) {
+      showFormMsg('error', 'Error: ' + (err && err.message ? err.message : 'Network error.'));
     }
 
     btn.disabled = false; btn.textContent = 'Save Creator';
