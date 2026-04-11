@@ -527,7 +527,7 @@
         <div class="form-row">
           <div class="form-group">
             <label>Handle *</label>
-            <input type="text" id="fHandle" placeholder="ivy" maxlength="32" pattern="[a-z0-9_-]+" />
+            <input type="text" id="fHandle" placeholder="ivy" maxlength="32" pattern="[a-z0-9_\-]+" />
           </div>
           <div class="form-group">
             <label>Display Name *</label>
@@ -1038,24 +1038,36 @@
     if (!editingHandle && !handle) { showFormMsg('error', 'Handle is required.'); btn.disabled = false; btn.textContent = 'Save Creator'; return; }
 
     try {
-      // Upload avatar first if a file was selected
-      const targetHandle = editingHandle || handle;
-      const uploadedUrl = await uploadAvatarIfNeeded(targetHandle);
-      if (uploadedUrl) payload.avatarUrl = uploadedUrl;
-
       let res;
       if (editingHandle) {
+        // Existing profile: upload avatar first (profile already exists in KV), then save
+        const uploadedUrl = await uploadAvatarIfNeeded(editingHandle);
+        if (uploadedUrl) payload.avatarUrl = uploadedUrl;
+
         res = await fetch(`/api/profile/${editingHandle}`, {
           method: 'PUT',
           headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
       } else {
+        // New profile: create it first, then upload avatar and patch avatarUrl
         res = await fetch('/api/profiles', {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
+        if (res.ok) {
+          const uploadedUrl = await uploadAvatarIfNeeded(handle);
+          if (uploadedUrl) {
+            // Patch avatarUrl onto the newly created profile
+            await fetch(`/api/profile/${handle}`, {
+              method: 'PUT',
+              headers: { 'Authorization': 'Bearer ' + authToken, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...payload, avatarUrl: uploadedUrl }),
+            });
+            payload.avatarUrl = uploadedUrl;
+          }
+        }
       }
 
       const data = await res.json();
